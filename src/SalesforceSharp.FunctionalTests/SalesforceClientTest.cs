@@ -12,7 +12,6 @@ namespace SalesforceSharp.FunctionalTests
     [TestFixture]
     public class SalesforceClientTest
     {
-        #region Authenticate
         [Test]
         public void Authenticate_InvalidUsername_AuthenticationFailure()
         {
@@ -72,9 +71,7 @@ namespace SalesforceSharp.FunctionalTests
             target.Authenticate(CreateAuthenticationFlow(TestConfig.ClientId, TestConfig.ClientSecret, TestConfig.Username, TestConfig.Password));
             Assert.IsTrue(target.IsAuthenticated);
         }
-        #endregion
 
-        #region Query
         [Test]
         public void Query_InvalidQuery_Exception()
         {
@@ -167,9 +164,7 @@ namespace SalesforceSharp.FunctionalTests
             });
 
         }
-        #endregion
 
-        #region
         [Test]
         public void QueryActionBatch_ValidQuery_AllRecords()
         {
@@ -189,10 +184,6 @@ namespace SalesforceSharp.FunctionalTests
 			Assert.AreEqual (totalRecords, actual.Count);
         }
 
-        #endregion
-
-        #region GetSOjbect
-
         [Test]
 		public void Get_SOjbectDetail_work()
         {
@@ -211,9 +202,6 @@ namespace SalesforceSharp.FunctionalTests
             Assert.IsNotNull(industryField.PicklistValues.FirstOrDefault(y => y.Value == "Engineering"));
         }
 
-        #endregion
-
-        #region GetRaw
         [Test]
         public void GetRawContent_ValidRecord()
         {
@@ -251,9 +239,7 @@ namespace SalesforceSharp.FunctionalTests
             Assert.That(actual.Contains(string.Format("\"FirstName\":\"{0}\"", record.FirstName)));
             Assert.That(actual.Contains(string.Format("\"LastName\":\"{0}\"", record.LastName)));
         }
-        #endregion
 
-        #region FindById
         [Test]
         public void FindById_NotExistingID_Null()
         {
@@ -278,9 +264,7 @@ namespace SalesforceSharp.FunctionalTests
             Assert.AreEqual(record.FirstName, actual.FirstName);
             Assert.AreEqual(record.LastName, actual.LastName);
         }
-        #endregion
 
-        #region ReadMetaData
         [Test]
         public void ReadMetaData_ValidObjectName_Metadata()
         {
@@ -290,9 +274,7 @@ namespace SalesforceSharp.FunctionalTests
 
             Assert.IsNotEmpty(result);
         }
-        #endregion
 
-        #region Create
         [Test]
         public void Create_ValidRecordWithAnonymous_Created()
         {
@@ -322,9 +304,7 @@ namespace SalesforceSharp.FunctionalTests
                 target.Create("Contact", record);
             });
         }
-        #endregion
 
-        #region Update
         [Test]
         public void Update_InvalidId_Exception()
         {
@@ -377,9 +357,7 @@ namespace SalesforceSharp.FunctionalTests
                 });
             }
         }
-        #endregion
 
-        #region Delete
         [Test]
         public void Delete_MalFormedId_Exception()
         {
@@ -425,9 +403,6 @@ namespace SalesforceSharp.FunctionalTests
 
             Assert.IsTrue(target.Delete("Contact", id));
         }
-        #endregion
-
-        #region ClassHelper
 
         [Test]
         public void GetRecordProjection_Result()
@@ -437,9 +412,7 @@ namespace SalesforceSharp.FunctionalTests
             Assert.IsTrue(jSonPropertyString.Contains("JsonName"));
             Assert.IsFalse(jSonPropertyString.Contains("JsonIgnoreMe"));
         }
-        #endregion
 
-        #region Helpers
         private SalesforceClient CreateClientAndAuth()
         {
             return CreateClientAndAuth(TestConfig.ClientId, TestConfig.ClientSecret, TestConfig.Username, TestConfig.Password);
@@ -475,7 +448,5 @@ namespace SalesforceSharp.FunctionalTests
             [Salesforce(FieldName = "JsonName")]
             public string JsonRenameMe { get; set; }
         }
-        #endregion
-
     }
 }

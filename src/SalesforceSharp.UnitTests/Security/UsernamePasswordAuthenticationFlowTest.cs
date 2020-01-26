@@ -2,12 +2,13 @@ using System;
 using System.Net;
 using NUnit.Framework;
 using RestSharp;
-using Rhino.Mocks;
 using SalesforceSharp.Security;
 using TestSharp;
 
 namespace SalesforceSharp.UnitTests.Security
 {
+    using Moq;
+
     [TestFixture]
     public class UsernamePasswordAuthenticationFlowTest
     {
@@ -50,15 +51,15 @@ namespace SalesforceSharp.UnitTests.Security
         [Test]
         public void Authenticate_Failed_Exception()
         {
-            var response = MockRepository.GenerateMock<IRestResponse>();
-            response.Expect(r => r.Content).Return("{ error: 'authentication failure', error_description: 'authentication failed' }");
-            response.Expect(r => r.StatusCode).Return(HttpStatusCode.BadRequest);
+            var response = new Mock<IRestResponse>();
+            response.Setup(r => r.Content).Returns("{ error: 'authentication failure', error_description: 'authentication failed' }");
+            response.Setup(r => r.StatusCode).Returns(HttpStatusCode.BadRequest);
 
-            var restClient = MockRepository.GenerateMock<IRestClient>();
-            restClient.Expect(r => r.BaseUrl).SetPropertyWithArgument(new Uri("http://tokenUrl"));
-            restClient.Expect(r => r.Execute(null)).IgnoreArguments().Return(response);
+            var restClient = new Mock<IRestClient>();
+            restClient.Setup(r => r.BaseUrl).Returns(new Uri("http://tokenUrl"));
+            restClient.Setup(r => r.Execute(It.IsAny<IRestRequest>(), Method.POST)).Returns(response.Object);
 
-            var target = new UsernamePasswordAuthenticationFlow(restClient, "clientId", "clientSecret", "userName", "password");
+            var target = new UsernamePasswordAuthenticationFlow(restClient.Object, "clientId", "clientSecret", "userName", "password");
             target.TokenRequestEndpointUrl = "http://tokenUrl";
 
             ExceptionAssert.IsThrowing(new SalesforceException(SalesforceError.AuthenticationFailure, "authentication failed"), () =>
@@ -70,15 +71,15 @@ namespace SalesforceSharp.UnitTests.Security
         [Test]
         public void Authenticate_Success_AuthenticationInfo()
         {
-            var response = MockRepository.GenerateMock<IRestResponse>();
-            response.Expect(r => r.Content).Return("{ access_token: 'access token 1', instance_url: 'instance url 2' }");
-            response.Expect(r => r.StatusCode).Return(HttpStatusCode.OK);
+            var response = new Mock<IRestResponse>();
+            response.Setup(r => r.Content).Returns("{ access_token: 'access token 1', instance_url: 'instance url 2' }");
+            response.Setup(r => r.StatusCode).Returns(HttpStatusCode.OK);
 
-            var restClient = MockRepository.GenerateMock<IRestClient>();
-            restClient.Expect(r => r.BaseUrl).SetPropertyWithArgument(new Uri("https://login.salesforce.com/services/oauth2/token"));
-            restClient.Expect(r => r.Execute(null)).IgnoreArguments().Return(response);
+            var restClient = new Mock<IRestClient>();
+            restClient.Setup(r => r.BaseUrl).Returns(new Uri("https://login.salesforce.com/services/oauth2/token"));
+            restClient.Setup(r => r.Execute(It.IsAny<IRestRequest>(), Method.POST)).Returns(response.Object);
 
-            var target = new UsernamePasswordAuthenticationFlow(restClient, "clientId", "clientSecret", "userName", "password");
+            var target = new UsernamePasswordAuthenticationFlow(restClient.Object, "clientId", "clientSecret", "userName", "password");
             var actual = target.Authenticate();
             Assert.AreEqual("access token 1", actual.AccessToken);
             Assert.AreEqual("instance url 2", actual.InstanceUrl);

@@ -13,7 +13,6 @@ namespace SalesforceSharp.Serialization
     /// </summary>
     internal class GenericJsonDeserializer : IDeserializer
     {
-        #region Properties
         /// <summary>
         /// Gets or sets the root element.
         /// </summary>
@@ -28,7 +27,6 @@ namespace SalesforceSharp.Serialization
         /// Gets or sets the date format.
         /// </summary>
         public string DateFormat { get; set; }
-        #endregion
 
         private SalesforceContractResolver salesForceContractResolver;
 
@@ -38,7 +36,6 @@ namespace SalesforceSharp.Serialization
             this.salesForceContractResolver = salesForceContractResolver;
         }
 
-        #region Methods
         /// <summary>
         /// Deserializes the specified response.
         /// </summary>
@@ -49,6 +46,5 @@ namespace SalesforceSharp.Serialization
         {
             return JsonConvert.DeserializeObject<T>(response.Content, new JsonSerializerSettings(){ContractResolver = salesForceContractResolver});
         }
-        #endregion
     }
 }

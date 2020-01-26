@@ -23,15 +23,12 @@ namespace SalesforceSharp.Security
     /// </summary>
     public class UsernamePasswordAuthenticationFlow : IAuthenticationFlow
     {
-        #region Fields
         private IRestClient m_restClient;
         private string m_clientId;
         private string m_clientSecret;
         private string m_username;
         private string m_password;
-        #endregion
 
-        #region Constructors
         /// <summary>
         /// Initializes a new instance of the <see cref="UsernamePasswordAuthenticationFlow"/> class.
         /// </summary>
@@ -81,9 +78,7 @@ namespace SalesforceSharp.Security
             m_password = password;
             TokenRequestEndpointUrl = tokenRequestEndpointUrl;
         }
-        #endregion
 
-        #region Properties
         /// <summary>
         /// Gets or sets the token request endpoint url.
         /// </summary>
@@ -92,9 +87,7 @@ namespace SalesforceSharp.Security
         /// For sandbox use "https://test.salesforce.com/services/oauth2/token.
         /// </remarks>
         public string TokenRequestEndpointUrl { get; set; }
-        #endregion
 
-        #region Methods
         /// <summary>
         /// Authenticate in the Salesforce REST's API.
         /// </summary>
@@ -137,6 +130,5 @@ namespace SalesforceSharp.Security
                 throw new SalesforceException(responseData.error.Value, responseData.error_description.Value);
             }            
         }
-        #endregion
     }
 }

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Net;
 using NUnit.Framework;
 using RestSharp;
-using Rhino.Mocks;
 using SalesforceSharp.Security;
 using SalesforceSharp.Serialization;
 using SalesforceSharp.UnitTests.Stubs;
@@ -11,12 +10,13 @@ using TestSharp;
 
 namespace SalesforceSharp.UnitTests
 {
+    using Moq;
+
     [TestFixture]
     public class SalesforceClientTest
     {
         private const string AltUrl = "someurl/somepath";
 
-        #region Constructors
         [Test]
         public void Constructor_NoArgs_DefaultValues()
         {
@@ -25,36 +25,32 @@ namespace SalesforceSharp.UnitTests
             Assert.IsNull(target.InstanceUrl);
             Assert.IsFalse(target.IsAuthenticated);
         }
-        #endregion
 
-        #region Authenticate
         [Test]
         public void Authenticate_FlowCannotAuthenticate_Exception()
         {
-            var flow = MockRepository.GenerateMock<IAuthenticationFlow>();
-            flow.Expect(f => f.Authenticate()).Throw(new SalesforceException(SalesforceError.AuthenticationFailure, "authentication failure"));
+            var flow = new Mock<IAuthenticationFlow>();
+            flow.Expect(f => f.Authenticate()).Throws(new SalesforceException(SalesforceError.AuthenticationFailure, "authentication failure"));
             var target = new SalesforceClient();
 
             ExceptionAssert.IsThrowing(new SalesforceException(SalesforceError.AuthenticationFailure, "authentication failure"), () =>
             {
-                target.Authenticate(flow);
+                target.Authenticate(flow.Object);
             });
         }
 
         [Test]
         public void Authenticate_FlowCanAuthenticate_IsAuthenticated()
         {
-            var flow = MockRepository.GenerateMock<IAuthenticationFlow>();
-            flow.Expect(f => f.Authenticate()).Return(new AuthenticationInfo("access", "http://url"));
+            var flow = new Mock<IAuthenticationFlow>();
+            flow.Expect(f => f.Authenticate()).Returns(new AuthenticationInfo("access", "http://url"));
             var target = new SalesforceClient();
 
-            target.Authenticate(flow);
+            target.Authenticate(flow.Object);
             Assert.IsTrue(target.IsAuthenticated);
             Assert.AreEqual(target.InstanceUrl, "http://url");
         }
-        #endregion
 
-        #region Any action
         [Test]
         public void AnyAction_NotAuthentacated_Exception()
         {
@@ -85,9 +81,7 @@ namespace SalesforceSharp.UnitTests
                 target.Update("TESTE", "TESTE", "TESTE");
             });
         }
-        #endregion
 
-        #region Create
         [Test]
         public void Create_NullOrEmptyObjectName_Exception()
         {
@@ -138,9 +132,7 @@ namespace SalesforceSharp.UnitTests
             Assert.AreEqual("id", actual);
             Assert.That(addedUrl.AbsoluteUri.IndexOf(string.Format("http://url/{0}", AltUrl)), Is.EqualTo(0));
         }
-        #endregion
 
-        #region Delete
         [Test]
         public void Delete_NullOrEmptyObjectName_Exception()
         {
@@ -192,9 +184,7 @@ namespace SalesforceSharp.UnitTests
             Assert.That(addedUrl.AbsoluteUri.IndexOf(string.Format("http://url/{0}", AltUrl)), Is.EqualTo(0));
 
         }
-        #endregion
 
-        #region FindById
         [Test]
         public void FindById_NullOrEmptyObjectName_Exception()
         {
@@ -245,9 +235,7 @@ namespace SalesforceSharp.UnitTests
             Assert.IsNotNull(target.FindById<RecordStub>("TESTE", "TESTE", AltUrl));
             Assert.That(addedUrl.AbsoluteUri.IndexOf(string.Format("http://url/{0}", AltUrl)), Is.EqualTo(0));
         }
-        #endregion
 
-        #region Query
         [Test]
         public void Query_NullOrEmptyObjectName_Exception()
         {
@@ -287,9 +275,7 @@ namespace SalesforceSharp.UnitTests
             Assert.AreEqual(2, actual.Count);
             Assert.That(addedUrl.AbsoluteUri.IndexOf(string.Format("http://url/{0}", AltUrl)), Is.EqualTo(0));
         }
-        #endregion
 
-        #region Update
         [Test]
         public void Update_NullOrEmptyObjectName_Exception()
         {
@@ -337,20 +323,20 @@ namespace SalesforceSharp.UnitTests
         [Test]
         public void Update_ErrorReceivedWithInvalidFields_Exception()
         {
-            var response = MockRepository.GenerateMock<IRestResponse<object>>();
-            response.Expect(r => r.Content).Return("[{ errorCode: 'error', message: 'error', fields: ['field1', 'field2'] }]");
-            response.Expect(r => r.StatusCode).Return(HttpStatusCode.BadRequest);
+            var response = new Mock<IRestResponse<object>>();
+            response.Setup(r => r.Content).Returns("[{ errorCode: 'error', message: 'error', fields: ['field1', 'field2'] }]");
+            response.Setup(r => r.StatusCode).Returns(HttpStatusCode.BadRequest);
 
-            var restClient = MockRepository.GenerateMock<IRestClient>();
-            restClient.Expect(r => r.BaseUrl).SetPropertyWithArgument(new Uri("http://tokenUrl"));
-            restClient.Expect(r => r.Execute<object>(null)).IgnoreArguments().Return(response);
-            restClient.Expect(r => r.Execute(null)).IgnoreArguments ().Return (response);
+            var restClient = new Mock<IRestClient>();
+            restClient.Setup(r => r.BaseUrl).Returns(new Uri("http://tokenUrl"));
+            restClient.Setup(r => r.Execute<object>(It.IsAny<IRestRequest>())).Returns(response.Object);
+            restClient.Setup(r => r.Execute(It.IsAny<IRestRequest>())).Returns(response.Object);
 
-            var flow = MockRepository.GenerateMock<IAuthenticationFlow>();
-            flow.Expect(f => f.Authenticate()).Return(new AuthenticationInfo("access", "http://url"));
+            var flow = new Mock<IAuthenticationFlow>();
+            flow.Setup(f => f.Authenticate()).Returns(new AuthenticationInfo("access", "http://url"));
 
-            var target = new SalesforceClient(restClient);
-            target.Authenticate(flow);
+            var target = new SalesforceClient(restClient.Object);
+            target.Authenticate(flow.Object);
 
             ExceptionAssert.IsThrowing(new SalesforceException("TESTE", "error", new string[] { "field1", "field2" }), () =>
             {
@@ -361,20 +347,20 @@ namespace SalesforceSharp.UnitTests
         [Test]
         public void Update_StatusCodeOkButErrorException_Exception()
         {
-            var response = MockRepository.GenerateMock<IRestResponse<object>>();
-            response.Expect(r => r.Content).Return("");
-            response.Expect(r => r.StatusCode).Return(HttpStatusCode.NoContent);
-            response.Expect(r => r.ErrorException).Return(new Exception("TESTE"));
+            var response = new Mock<IRestResponse<object>>();
+            response.Setup(r => r.Content).Returns("");
+            response.Setup(r => r.StatusCode).Returns(HttpStatusCode.NoContent);
+            response.Setup(r => r.ErrorException).Returns(new Exception("TESTE"));
 
-            var restClient = MockRepository.GenerateMock<IRestClient>();
-            restClient.Expect(r => r.BaseUrl).SetPropertyWithArgument(new Uri("http://tokenUrl"));
-            restClient.Expect(r => r.Execute(null)).IgnoreArguments().Return(response);
+            var restClient = new Mock<IRestClient>();
+            restClient.Setup(r => r.BaseUrl).Returns(new Uri("http://tokenUrl"));
+            restClient.Setup(r => r.Execute(It.IsAny<IRestRequest>())).Returns(response.Object);
 
-            var flow = MockRepository.GenerateMock<IAuthenticationFlow>();
-            flow.Expect(f => f.Authenticate()).Return(new AuthenticationInfo("access", "http://url"));
+            var flow = new Mock<IAuthenticationFlow>();
+            flow.Setup(f => f.Authenticate()).Returns(new AuthenticationInfo("access", "http://url"));
 
-            var target = new SalesforceClient(restClient);
-            target.Authenticate(flow);
+            var target = new SalesforceClient(restClient.Object);
+            target.Authenticate(flow.Object);
 
             ExceptionAssert.IsThrowing(new FormatException("TESTE" + Environment.NewLine), () =>
             {
@@ -397,72 +383,68 @@ namespace SalesforceSharp.UnitTests
             Assert.IsTrue(target.Update("TESTE", "TESTE", "TESTE", AltUrl));
             Assert.That(addedUrl.AbsoluteUri.IndexOf(string.Format("http://url/{0}", AltUrl)), Is.EqualTo(0));
         }
-        #endregion
 
-        #region Helpers
         private SalesforceClient CreateClientWithResponseError<T>() where T : new()
         {
-            var response = MockRepository.GenerateMock<IRestResponse<T>>();
-            response.Expect(r => r.Content).Return("[{ errorCode: 'error', message: 'error' }]");
-            response.Expect(r => r.StatusCode).Return(HttpStatusCode.BadRequest);
+            var response = new Mock<IRestResponse<T>>();
+            response.Setup(r => r.Content).Returns("[{ errorCode: 'error', message: 'error' }]");
+            response.Setup(r => r.StatusCode).Returns(HttpStatusCode.BadRequest);
 
-            var restClient = MockRepository.GenerateMock<IRestClient>();
-            restClient.Expect(r => r.BaseUrl).SetPropertyWithArgument(new Uri("http://tokenUrl"));
-            restClient.Expect (r => r.Execute(null)).IgnoreArguments ().Return (response);
-            restClient.Expect (r => r.Execute<T>(null)).IgnoreArguments().Return(response);
+            var restClient = new Mock<IRestClient>();
+            restClient.Setup(r => r.BaseUrl).Returns(new Uri("http://tokenUrl"));
+            restClient.Setup(r => r.Execute(It.IsAny<IRestRequest>())).Returns(response.Object);
+            restClient.Setup(r => r.Execute<T>(It.IsAny<IRestRequest>())).Returns(response.Object);
 
-            var flow = MockRepository.GenerateMock<IAuthenticationFlow>();
-            flow.Expect(f => f.Authenticate()).Return(new AuthenticationInfo("access", "http://url"));
+            var flow = new Mock<IAuthenticationFlow>();
+            flow.Setup(f => f.Authenticate()).Returns(new AuthenticationInfo("access", "http://url"));
 
-            var target = new SalesforceClient(restClient);
-            target.Authenticate(flow);
+            var target = new SalesforceClient(restClient.Object);
+            target.Authenticate(flow.Object);
 
             return target;
         }
 
         private SalesforceClient CreateClientWithResponseOk<T>(HttpStatusCode statusCode, T data) where T : new()
         {
-            var response = MockRepository.GenerateMock<IRestResponse<T>>();
-            response.Expect(r => r.Content).Return("{\"id\":\"id\",\"records\":[{\"Id\": \"1\"},{\"Id\":\"2\"}]}");
-            response.Expect(r => r.StatusCode).Return(statusCode);
-            response.Expect(r => r.ErrorException).Return(null);
-            response.Expect(r => r.Data).Return(data);
+            var response = new Mock<IRestResponse<T>>();
+            response.Setup(r => r.Content).Returns("{\"id\":\"id\",\"records\":[{\"Id\": \"1\"},{\"Id\":\"2\"}]}");
+            response.Setup(r => r.StatusCode).Returns(statusCode);
+            response.Setup(r => r.ErrorException).Returns((Exception)null);
+            response.Setup(r => r.Data).Returns(data);
 
-            var restClient = MockRepository.GenerateMock<IRestClient>();
-            restClient.Expect (r => r.Execute(null)).IgnoreArguments().Return(response);
-            restClient.Expect (r => r.Execute<T>(null)).IgnoreArguments ().Return (response);
+            var restClient = new Mock<IRestClient>();
+            restClient.Setup(r => r.Execute(It.IsAny<IRestRequest>())).Returns(response.Object);
+            restClient.Setup(r => r.Execute<T>(It.IsAny<IRestRequest>())).Returns(response.Object);
 
+            var flow = new Mock<IAuthenticationFlow>();
+            flow.Setup(f => f.Authenticate()).Returns(new AuthenticationInfo("access", "http://url"));
 
-            var flow = MockRepository.GenerateMock<IAuthenticationFlow>();
-            flow.Expect(f => f.Authenticate()).Return(new AuthenticationInfo("access", "http://url"));
-
-            var target = new SalesforceClient(restClient);
-            target.Authenticate(flow);
+            var target = new SalesforceClient(restClient.Object);
+            target.Authenticate(flow.Object);
 
             return target;
         }
 
         private SalesforceClient CreateAltUrlClientWithResponseOk<T>(HttpStatusCode statusCode, T data, Action<Uri> recordUrl) where T : new()
         {
-            var response = MockRepository.GenerateMock<IRestResponse<T>>();
-            response.Expect(r => r.Content).Return("{\"id\":\"id\",\"records\":[{\"Id\": \"1\"},{\"Id\":\"2\"}]}");
-            response.Expect(r => r.StatusCode).Return(statusCode);
-            response.Expect(r => r.ErrorException).Return(null);
-            response.Expect(r => r.Data).Return(data);
+            var response = new Mock<IRestResponse<T>>();
+            response.Setup(r => r.Content).Returns("{\"id\":\"id\",\"records\":[{\"Id\": \"1\"},{\"Id\":\"2\"}]}");
+            response.Setup(r => r.StatusCode).Returns(statusCode);
+            response.Setup(r => r.ErrorException).Returns((Exception)null);
+            response.Setup(r => r.Data).Returns(data);
 
-            var restClient = MockRepository.GenerateMock<IRestClient>();
-            restClient.Expect(r => r.BaseUrl = new Uri(string.Format("http://url{0}/TESTE", AltUrl))).IgnoreArguments().Do(recordUrl);
-            restClient.Expect (r => r.Execute(null)).IgnoreArguments().Return(response);
-            restClient.Expect (r => r.Execute<T>(null)).IgnoreArguments ().Return (response);
+            var restClient = new Mock<IRestClient>();
+            restClient.Setup(r => r.BaseUrl).Returns(new Uri($"http://url{AltUrl}/TESTE"));
+            restClient.Setup(r => r.Execute(It.IsAny<IRestRequest>())).Returns(response.Object);
+            restClient.Setup(r => r.Execute<T>(It.IsAny<IRestRequest>())).Returns(response.Object);
 
-            var flow = MockRepository.GenerateMock<IAuthenticationFlow>();
-            flow.Expect(f => f.Authenticate()).Return(new AuthenticationInfo("access", "http://url"));
+            var flow = new Mock<IAuthenticationFlow>();
+            flow.Setup(f => f.Authenticate()).Returns(new AuthenticationInfo("access", "http://url"));
 
-            var target = new SalesforceClient(restClient);
-            target.Authenticate(flow);
+            var target = new SalesforceClient(restClient.Object);
+            target.Authenticate(flow.Object);
 
             return target;
         }
-        #endregion
     }
 }

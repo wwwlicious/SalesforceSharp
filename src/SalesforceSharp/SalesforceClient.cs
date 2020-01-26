@@ -17,15 +17,12 @@ namespace SalesforceSharp
     /// </summary>
     public class SalesforceClient
     {
-        #region Fields
         private string m_accessToken;
         private DynamicJsonDeserializer m_deserializer;
         private IRestClient m_restClient;
         private GenericJsonDeserializer genericJsonDeserializer;
         private GenericJsonSerializer updateJsonSerializer;
-        #endregion
 
-        #region Constructors
         /// <summary>
         /// Initializes a new instance of the <see cref="SalesforceClient"/> class.
         /// </summary>
@@ -46,9 +43,7 @@ namespace SalesforceSharp
             genericJsonDeserializer = new GenericJsonDeserializer(new SalesforceContractResolver(false));
             updateJsonSerializer = new GenericJsonSerializer(new SalesforceContractResolver(true));
         }
-        #endregion
 
-        #region Properties
         /// <summary>
         /// Gets or sets the API version.
         /// </summary>
@@ -75,9 +70,7 @@ namespace SalesforceSharp
         /// The instance URL.
         /// </value>
         public string InstanceUrl { get; private set; }
-        #endregion
 
-        #region Methods
         /// <summary>
         /// Authenticates the client.
         /// </summary>
@@ -415,9 +408,6 @@ namespace SalesforceSharp
             return response.RawBytes;
         }
 
-        #endregion
-
-        #region Requests
         /// <summary>
         /// Perform the request against Salesforce's REST API.
         /// </summary>
@@ -522,9 +512,7 @@ namespace SalesforceSharp
                 throw ex;
             }
         }
-        #endregion
 
-        #region Helpers
         /// <summary>
         /// Gets the record projection fields.
         /// </summary>
@@ -581,6 +569,5 @@ namespace SalesforceSharp
         {
             return "{0}/{1}".With(InstanceUrl, url);
         }
-        #endregion
     }
 }

@@ -4,6 +4,9 @@ using TestSharp;
 
 namespace SalesforceSharp.FunctionalTests
 {
+    using System.IO;
+    using Microsoft.Extensions.Configuration;
+
     /// <summary>
     /// Test's configurations.
     /// <remarks>
@@ -12,18 +15,20 @@ namespace SalesforceSharp.FunctionalTests
     /// </summary>
     public static class TestConfig
     {
-        #region Constructors
         static TestConfig()
         {
             try
             {
-                var reader = new AppSettingsReader ();
-                TokenRequestEndpointUrl = reader.GetValue("TokenRequestEndpointUrl", typeof(string)) as string;
-                ClientId = reader.GetValue("ClientId", typeof (string)) as string;
-                ClientSecret = reader.GetValue("ClientSecret", typeof (string)) as string;
-                Username = reader.GetValue("Username", typeof (string)) as string;
-                Password = reader.GetValue("Password", typeof (string)) as string;
-                ObjectName = reader.GetValue("ObjectName", typeof (string)) as string;
+                var configuration = new ConfigurationBuilder()
+                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .AddJsonFile("appsettings.json").Build();
+                
+                TokenRequestEndpointUrl = configuration["TokenRequestEndpointUrl"];
+                ClientId = configuration["ClientId"];
+                ClientSecret = configuration["ClientSecret"];
+                Username = configuration["Username"];
+                Password = configuration["Password"];
+                ObjectName = configuration["ObjectName"];
             }
             catch (Exception ex)
             {
@@ -40,15 +45,12 @@ namespace SalesforceSharp.FunctionalTests
                 throw new InvalidOperationException("Please, check the Salesforce.FunctionalTests' App.config and define ALL the test configurations.");
             }           
         }
-        #endregion
 
-        #region Properties
         public static string TokenRequestEndpointUrl { get; set; }
         public static string ClientId { get; set; }
         public static string ClientSecret { get; set; }
         public static string Username { get; set; }
         public static string Password { get; set; }
         public static string ObjectName { get; set; }
-        #endregion
     }
 }

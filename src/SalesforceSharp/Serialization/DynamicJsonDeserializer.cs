@@ -12,7 +12,6 @@ namespace SalesforceSharp.Serialization
     /// </summary>
     internal class DynamicJsonDeserializer : IDeserializer
     {
-        #region Properties
         /// <summary>
         /// Gets or sets the root element.
         /// </summary>
@@ -27,9 +26,7 @@ namespace SalesforceSharp.Serialization
         /// Gets or sets the date format.
         /// </summary>
         public string DateFormat { get; set; }
-        #endregion
-        
-        #region Methods
+
         /// <summary>
         /// Deserializes the specified response.
         /// </summary>
@@ -40,6 +37,5 @@ namespace SalesforceSharp.Serialization
         {
             return JsonConvert.DeserializeObject<dynamic>(response.Content);
         }
-        #endregion
     }
 }
